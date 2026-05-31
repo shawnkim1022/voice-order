@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  voice-order nightly 다차원 매트릭스 측정 LaunchAgent (macOS launchd).
+
+  매일 정해진 시각에 시뮬레이터 매트릭스를 자동 실행하고 요약 JSON 을 생성한다.
+  결과는 nightly-report.mjs 가 markdown 보고서 + regression alert 로 가공한다.
+
+  설치:
+    cp com.voice-order.nightly-matrix.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.voice-order.nightly-matrix.plist
+
+  제거:
+    launchctl unload ~/Library/LaunchAgents/com.voice-order.nightly-matrix.plist
+    rm ~/Library/LaunchAgents/com.voice-order.nightly-matrix.plist
+
+  수동 트리거:
+    launchctl start com.voice-order.nightly-matrix
+
+  상태 확인:
+    launchctl list | grep voice-order
+    tail -f /tmp/voice-order-nightly-matrix-stderr.log
+
+  스케줄: 매일 04:00 (로컬 유휴 시간대 — 다른 야간 작업과 충돌 회피).
+
+  주의:
+    - WorkingDirectory 를 명시해 dist 절대경로 import 를 보장한다.
+    - PATH 에 node 경로를 명시한다 (launchd 는 로그인 셸 PATH 를 상속하지 않음).
+    - 경로는 placeholder (/path/to/...) — 설치 시 실제 경로로 교체.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.voice-order.nightly-matrix</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/path/to/voice-order-project/scripts/nightly-matrix-r3.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/path/to/voice-order-project</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>4</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/voice-order-nightly-matrix-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/voice-order-nightly-matrix-stderr.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!--
+      nvm 경로 직접 추가. node 버전 업그레이드 시 nvm symlink 또는
+      nightly-matrix-r3.sh 내부 nvm source 방식으로 전환 검토.
+    -->
+    <key>PATH</key>
+    <string>/path/to/node/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

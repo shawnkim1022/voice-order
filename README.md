@@ -62,8 +62,9 @@ voice-order-project/
 
 ## 코드 접근
 
-소스 코드는 본사 영업 단계의 협상 자료에 해당하므로 외부 공개를 제한한다. 라이선스도 Proprietary 로 외부 공유·재라이선스를 금하고 있다.
+소스 코드는 본사 영업 단계의 협상 자료에 해당하므로 외부 공개를 제한한다. 라이선스도 Proprietary 로 외부 공유·재라이선스를 금하고 있다. 단, 엔지니어링 방식을 보여주는 **대표 코드 발췌**는 [`code-samples/`](code-samples/) 에 공개한다 (도메인 사전·상태머신 전이·ML 가중치 등 핵심 자산 제외).
 
+- **대표 코드 발췌**: [`code-samples/`](code-samples/) — 자동화 파이프라인 (CI · launchd · regression alert) + property-based testing 2종
 - **인터뷰 / 사전 협의**: 화면 공유 또는 실기 단말로 실제 동작 및 코드 구조 시연 가능
 - **시연 범위**: NLU 파이프라인, 분류기 학습 코드, 평가 인프라 워크플로우, AI 도구 활용 (CLAUDE.md, memory/, LaunchAgent, GitHub Actions)
 - **상업 라이선스 (프랜차이즈, 기업, 공공기관)**: `LICENSE` 의 연락처로 별도 협의

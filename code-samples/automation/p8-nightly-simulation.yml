@@ -1,0 +1,149 @@
+# P8 Nightly Simulation
+#
+# 책임:
+#   - voice-order-core 의 룰 기반 시뮬레이터를 야간에 자동 실행한다.
+#   - markdown / JSON 보고서를 artifact 로 업로드한다.
+#   - **자동 반영 없음** — 실패 결과는 `synthetic_regression_candidate (status: pending_review)`
+#     상태로만 모이며 lexicon / menuData / test 파일은 수정되지 않는다.
+#
+# 절대 규칙 (AGENTS.md):
+#   - 외부 AI API (OpenAI / Claude / Gemini) 호출 0.
+#   - 한국어 안내. 영어 fallback 없음.
+#   - 비밀키 / API 키 사용 안 함 — 결정적 룰 기반 simulator.
+#
+# 운영 메모:
+#   - threshold 정책 기본은 보수적 (failOnStuck/failOnTooManyTurns 비활성).
+#   - workflow_dispatch 입력으로 minPassRate / maxFailureCount / enforceThreshold 를
+#     명시한 경우에만 CI fail 신호를 만든다.
+#   - 워크플로우 자체는 깨지지 않게 — `continue-on-error: false` 인 step 은
+#     install / build / test / report 만이고 artifact 업로드는 always() 로 보장.
+
+name: P8 Nightly Simulation
+
+# 트리거: workflow_dispatch (manual) 만 사용한다.
+#   - CI 비용을 통제하기 위해 매일 schedule 트리거는 비활성화.
+#   - 일상 측정은 로컬 LaunchAgent (nightly) 가 담당하고, 본 워크플로우는
+#     필요 시 수동으로 실행해 결과를 artifact 로 남긴다.
+on:
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: '결정적 seed (정수, 기본 1)'
+        required: false
+        default: '1'
+      maxTurns:
+        description: '시나리오당 최대 turn 수 (선택)'
+        required: false
+        default: ''
+      minPassRate:
+        description: '최소 통과율 (0~1, 선택). 미설정 시 임계 검사 안 함.'
+        required: false
+        default: ''
+      maxFailureCount:
+        description: '허용 최대 실패 건수 (선택)'
+        required: false
+        default: ''
+      failOnStuck:
+        description: 'stuck 1건이라도 있으면 CI fail (선택)'
+        required: false
+        default: 'false'
+        type: boolean
+      failOnTooManyTurns:
+        description: 'too_many_turns 1건이라도 있으면 CI fail (선택)'
+        required: false
+        default: 'false'
+        type: boolean
+      enforceThreshold:
+        description: 'threshold 위배 시 exit 1 으로 CI fail (기본 false)'
+        required: false
+        default: 'false'
+        type: boolean
+
+# 동시 실행 제한 — nightly 가 겹치지 않게.
+concurrency:
+  group: p8-nightly-simulation
+  cancel-in-progress: false
+
+jobs:
+  simulate:
+    name: Run nightly synthetic simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: packages/voice-order-core
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # cache 는 lock 파일이 존재할 때만 활성화 (fail-safe).
+          cache: 'npm'
+          cache-dependency-path: packages/voice-order-core/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run unit tests
+        run: npm test -- --runInBand
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run nightly synthetic simulation
+        id: simulate
+        env:
+          NIGHTLY_SEED: ${{ inputs.seed || '1' }}
+          NIGHTLY_MAX_TURNS: ${{ inputs.maxTurns || '' }}
+          NIGHTLY_MIN_PASS_RATE: ${{ inputs.minPassRate || '' }}
+          NIGHTLY_MAX_FAILURE_COUNT: ${{ inputs.maxFailureCount || '' }}
+          NIGHTLY_FAIL_ON_STUCK: ${{ inputs.failOnStuck || 'false' }}
+          NIGHTLY_FAIL_ON_TOO_MANY_TURNS: ${{ inputs.failOnTooManyTurns || 'false' }}
+          NIGHTLY_ENFORCE_THRESHOLD: ${{ inputs.enforceThreshold || 'false' }}
+        run: |
+          set -euo pipefail
+          ARGS=(--outputDir ./nightly-report --seed "$NIGHTLY_SEED")
+          if [ -n "$NIGHTLY_MAX_TURNS" ]; then
+            ARGS+=(--maxTurns "$NIGHTLY_MAX_TURNS")
+          fi
+          if [ -n "$NIGHTLY_MIN_PASS_RATE" ]; then
+            ARGS+=(--minPassRate "$NIGHTLY_MIN_PASS_RATE")
+          fi
+          if [ -n "$NIGHTLY_MAX_FAILURE_COUNT" ]; then
+            ARGS+=(--maxFailureCount "$NIGHTLY_MAX_FAILURE_COUNT")
+          fi
+          if [ "$NIGHTLY_FAIL_ON_STUCK" = "true" ]; then
+            ARGS+=(--failOnStuck)
+          fi
+          if [ "$NIGHTLY_FAIL_ON_TOO_MANY_TURNS" = "true" ]; then
+            ARGS+=(--failOnTooManyTurns)
+          fi
+          if [ "$NIGHTLY_ENFORCE_THRESHOLD" = "true" ]; then
+            ARGS+=(--enforce-threshold)
+          fi
+          # build 가 위 step 에서 끝났으므로 재컴파일 없이 직접 실행.
+          node dist/simulation/ciReport.js "${ARGS[@]}"
+
+      - name: Append markdown to job summary
+        if: always()
+        run: |
+          if [ -f packages/voice-order-core/nightly-report/nightly-report.md ]; then
+            cat packages/voice-order-core/nightly-report/nightly-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '⚠️ nightly-report.md 가 생성되지 않았어요. 위 step 로그를 확인해 주세요.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload nightly artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p8-nightly-simulation-report
+          path: packages/voice-order-core/nightly-report/*
+          if-no-files-found: warn
+          retention-days: 30
