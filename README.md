@@ -1,5 +1,131 @@
 # Voice Order
 
+🌐 **English** · [한국어](#korean)
+
+> 📖 **Public information repository.** This repository holds only the overview, scope of responsibility, directory structure, and license information for the voice-order system.
+> The actual source code is maintained in a separate private repository (Proprietary / All Rights Reserved — see `LICENSE`).
+> Code demos and line-level walkthroughs take place in interviews or pre-arranged sessions.
+
+---
+
+## What it is
+
+A system that takes café orders by Korean voice. Usable by blind, low-vision, and elderly people as an alternative to touch kiosks.
+
+No large AI APIs — a combination of rule-based NLU, fuzzy matching, a state machine, a trained sklearn slot classifier, and a fine-tuned KoELECTRA (multi-task, ONNX).
+
+Main components: a Korean café-domain lexicon, an intent-group router, and simulator-based evaluation infrastructure.
+
+## Scope of responsibility (SDK integration model)
+
+A model integrated into the franchise's app as an SDK. The franchise operates its own payment, settlement, membership, and points systems → voice-order does not encroach on those areas.
+
+- **voice-order's responsibility**: STT, NLU, menu and cart, voice readback, voice confirmation right before payment (`pre_payment_review` / `high_value_confirm`), emitting the `order_complete` event, multi-modality branching (`readBackMode`, VoiceOver/TalkBack compatibility — compliant with Art. 14(6)(5) of the Enforcement Decree of Korea's 장애인차별금지법 / Act on the Prohibition of Discrimination Against Persons with Disabilities, effective 2024-07-28).
+- **Franchise's domain**: payment methods and payment processing (PG/POS), receipt issuance, points accrual.
+
+---
+
+## Directory structure
+
+```
+voice-order-project/
+├── packages/voice-order-core/   # TypeScript NLU engine
+│   ├── src/
+│   │   ├── nlu/                 # normalization, slot extraction, intent routing
+│   │   ├── normalize/           # Korean utterance normalization cascade
+│   │   ├── order/               # cart, state machine, handlers
+│   │   ├── data/lexicons/       # Korean café-domain lexicon
+│   │   ├── menu/                # menu data
+│   │   ├── ml/                  # trained sklearn model + KoELECTRA ONNX
+│   │   ├── recommendation/      # recommendation engine
+│   │   ├── simulation/          # simulator + fuzz + oracle
+│   │   ├── feedback/            # automatic regression-candidate collection
+│   │   └── allergy/             # allergy guard
+│   └── tests/
+├── server/                      # FastAPI (Python) — storage, admin, auth
+├── apps/admin/                  # admin web UI (React + Vite)
+├── apps/pilot-mobile/           # pilot mobile app (Expo)
+├── docs/                        # ops / policy / integration docs
+└── .github/workflows/           # CI / automated deployment
+```
+
+---
+
+## Public documents available
+
+| Document | Purpose |
+|---|---|
+| `LICENSE` | Private / proprietary license (Proprietary / All Rights Reserved) |
+| `README.md` | This document (system overview) |
+
+Detailed technical docs, operational policy, the franchise-collaboration guide, and handover materials are maintained only inside the private repository.
+
+---
+
+## Code access
+
+The source code is negotiation material at the franchise-sales stage, so external disclosure is restricted. The license is also Proprietary, prohibiting external sharing and re-licensing. That said, **representative code excerpts** that show the engineering approach are published in [`code-samples/`](code-samples/) (core assets such as the domain lexicon, state-machine transitions, and ML weights are excluded).
+
+- **Representative code excerpts**: [`code-samples/`](code-samples/) — automation pipeline (CI · launchd · regression alert) + 2 property-based testing examples
+- **Interview / pre-arranged session**: live demonstration of actual behavior and code structure via screen share or a physical device
+- **Demo scope**: NLU pipeline, classifier training code, evaluation-infrastructure workflow, AI-tooling usage (CLAUDE.md, memory/, LaunchAgent, GitHub Actions)
+- **Commercial license (franchise, enterprise, public institutions)**: contact via `LICENSE` for separate discussion
+
+---
+
+## Absolute rules (summary)
+
+- Zero calls to external AI APIs (OpenAI / Claude / Gemini / Clova, etc.)
+- Zero commits of secret keys, tokens, or production DB
+- Zero external sharing / disclosure / re-licensing of these assets (Proprietary license)
+- Zero source-code sharing with the franchise or partners (API and integration guide only)
+- Korean-only responses (no English fallback)
+- Deterministic and rule-based (same input → same output)
+- Safety-first (no automatic execution of risky actions such as payment, cancellation, or staff calls; read-back confirmation)
+
+---
+
+## License
+
+See `LICENSE`. **Proprietary / All Rights Reserved.** No usage rights are granted.
+
+Commercial licenses (franchise, enterprise, public institutions) require a separate agreement.
+
+---
+
+## External data sources (Acknowledgement)
+
+This project's simulator uses only **statistical-distribution grounding** from the external corpora below. Zero original utterances are included — only derived statistics (filler rate, truncated-utterance rate, café-domain match frequency, etc.) are extracted.
+
+### KsponSpeech (AI Hub)
+- **Source**: AI Hub (https://aihub.or.kr) — Korean speech-transcription corpus, 628,545 utterances
+- **Derived data**: 12 KB statistical-distribution JSON (not model-training input)
+- **Usage**: `utteranceTemplates` HESITATION_PREFIX weight + Disfluency Extreme / STT Perturbation simulation grounding
+- **License (AI Hub terms)**:
+  - Free to deploy trained models / services (commercial use OK)
+  - Attribution required (this section provides it)
+  - Redistribution of re-processed data requires prior consultation — this project extracts only statistical distributions → within the free-use scope
+- **Recommended consultation point**: clarify with NIA / AI Hub right before store-pilot deployment / B2B commercialization
+
+### Unused corpora
+
+- **National Institute of Korean Language — "모두의 말뭉치" (Everyone's Corpus)**: commercial use strictly prohibited (Terms of Use Art. 12(5) and 12(12) / Art. 13(2)). voice-order's use case (B2B in-store voice ordering) is commercial and therefore directly conflicts. Decided not to use (2026-05-12).
+- **Seoul-dialect read speech / 21st Century Sejong Project**: research-only — commercial use not permitted.
+
+---
+
+## Contact
+
+Commercial-license inquiries and interview scheduling: shawnkim1022@gmail.com
+
+---
+
+<a id="korean"></a>
+
+# Voice Order (한국어)
+
+🌐 [English](#voice-order) · **한국어**
+
 > 📖 **공개 정보 저장소**. 본 저장소는 voice-order 시스템의 개요, 책임 경계, 디렉토리 구조, 라이선스 정보만 담는다.
 > 실제 소스 코드는 별도의 비공개 저장소에서 관리한다 (Proprietary / All Rights Reserved, `LICENSE` 참조).
 > 코드 데모와 코드 단위 설명은 인터뷰 또는 사전 협의된 자리에서 진행한다.
