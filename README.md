@@ -28,7 +28,7 @@ State-changing actions are explicit and guarded. Cart mutations and a mandatory 
 
 ## How I know it works
 
-The part worth showing is the layer that measures the app. An oracle scores about 7,600 simulated orders per run across roughly 150 scenarios, graded per slot (intent, quantity, size, temperature, options) into a root-cause failure taxonomy. Variance is measured across random seeds, so single-seed numbers are never quoted, and a held-out scenario split guards against overfitting the fixes to the test set. A machine-checked release gate blocks regressions, with a pass-rate floor and zero tolerance for silent staff-escalation. Twice, this data overturned my own assumptions about what was broken, which is the reason to build it.
+The part worth showing is the layer that measures the app. An oracle scores about 7,620 simulated orders per run across roughly 150 scenarios, graded per slot (intent, quantity, size, temperature, options) into a root-cause failure taxonomy. Variance is measured across random seeds, so single-seed numbers are never quoted, and a held-out scenario split guards against overfitting the fixes to the test set. A machine-checked release gate blocks regressions, with a pass-rate floor and zero tolerance for silent staff-escalation. Twice, this data overturned my own assumptions about what was broken, which is the reason to build it.
 
 ## Honest limitations
 
