@@ -8,6 +8,9 @@ A deterministic Korean voice-ordering engine for the people touch kiosks leave b
 
 A touchscreen kiosk is unusable without sight. The design problem is not "add a microphone." It is mapping free-form, disfluent Korean speech onto a correct, auditable order, deterministically, in a setting where a wrong order and a hallucinated confirmation are both unacceptable. The whole system is built around one question: how do we know the output is correct?
 
+## Designed with the users
+Earlier versions were tested informally with a blind user, with elderly users, and through discovery with a visual-impairment organization — and that feedback changed the design more than any algorithm did. I had built it voice-only, assuming that served blind users; in fact they navigate their phones through a screen reader (VoiceOver), so I rebuilt the flow to work alongside it rather than replace it, and added a haptic cue so the user knows when the system is listening. This was informal, small-N feedback, not a controlled study.
+
 ## Ontology
 
 Speech resolves onto an explicit domain model rather than free text. The objects are MenuItem, Option (temperature, size, shots, milk), CartLineItem, Cart, Order, and Tenant (the franchise). They link the obvious way: a Cart holds line items, each line item points to a MenuItem plus its Options, an Order wraps a Cart, and every Tenant owns its own isolated Menu. A resolution layer of Korean café lexicons and a menu schema maps aliases, abbreviations, and misspeaks onto those canonical objects. One invariant matters most: a franchise's confidential menu can never surface in another tenant's context, and that is enforced by a property-based test, not by convention.
@@ -31,8 +34,7 @@ State-changing actions are explicit and guarded. Cart mutations and a mandatory 
 The part worth showing is the layer that measures the app. An oracle scores about 7,620 simulated orders per run across roughly 150 scenarios, graded per slot (intent, quantity, size, temperature, options) into a root-cause failure taxonomy. Variance is measured across random seeds, so single-seed numbers are never quoted, and a held-out scenario split guards against overfitting the fixes to the test set. A machine-checked release gate blocks regressions, with a pass-rate floor and zero tolerance for silent staff-escalation. Twice, this data overturned my own assumptions about what was broken, which is the reason to build it.
 
 ## Honest limitations
-
-Pre-deployment and solo-built. Every number here comes from synthetic stress tests. The system has not run a real-store pilot yet, and the persona and scenario frequencies are hypotheses to be re-weighted against real usage.
+Pre-deployment and solo-built. Every number here comes from synthetic stress tests. Real users shaped the design through informal testing, but the system has not run a real-store pilot or a controlled test of the final build with blind users yet, and the persona and scenario frequencies are hypotheses to be re-weighted against real usage.
 
 ## Code access and license
 
