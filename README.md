@@ -1,17 +1,20 @@
 # Voice Order
 
-A deterministic Korean voice-ordering engine for the people touch kiosks leave behind: blind, low-vision, and elderly customers. Speech goes in, a correct and confirmed order comes out, with zero external LLM calls.
+A Korean voice-ordering prototype for café menus, designed for blind, low-vision, and elderly customers who are blocked by touch-only kiosks.
 
-> Public overview. The source lives in a separate private repo (Proprietary, All Rights Reserved, see `LICENSE`). Representative non-core code is in [`code-samples/`](code-samples/). Full code walkthroughs and a live demo happen in interviews.
+The system maps spoken Korean orders to a structured café menu, asks follow-up questions when required options are missing, and produces a confirmed order before handoff. No external LLM calls run on the user-facing path.
+
+The most important part of the project was not the voice interface. User testing showed that blind users often already rely on screen readers and existing app flows, so I reframed the product from a standalone voice tool into an embeddable flow for café-chain apps.
 
 ## The problem
 
 A touchscreen kiosk is unusable without sight. The design problem is not "add a microphone." It is mapping free-form, disfluent Korean speech onto a correct, auditable order, deterministically, in a setting where a wrong order and a hallucinated confirmation are both unacceptable. The whole system is built around one question: how do we know the output is correct?
 
 ## Designed with the users
-Earlier versions were tested informally with a blind user, with elderly users, and through discovery with a visual-impairment organization — and that feedback changed the design more than any algorithm did. I had built it voice-only, assuming that served blind users; in fact they navigate their phones through a screen reader (VoiceOver), so I rebuilt the flow to work alongside it rather than replace it, and added a haptic cue so the user knows when the system is listening. This was informal, small-N feedback, not a controlled study.
 
-## Ontology
+Earlier versions were tested informally with a blind user, with elderly users, and through discovery with a visual-impairment organization — and that feedback changed the design more than any algorithm did. I had built it voice-only, assuming that served blind users; in fact they navigate their phones through a screen reader (VoiceOver), so I rebuilt the flow to work alongside it rather than replace it, and added a haptic cue so the user knows when the system is listening. This was informal, small-N feedback, so I treat it as product discovery rather than proof of efficacy.
+
+## Domain model / Ontology
 
 Speech resolves onto an explicit domain model rather than free text. The objects are MenuItem, Option (temperature, size, shots, milk), CartLineItem, Cart, Order, and Tenant (the franchise). They link the obvious way: a Cart holds line items, each line item points to a MenuItem plus its Options, an Order wraps a Cart, and every Tenant owns its own isolated Menu. A resolution layer of Korean café lexicons and a menu schema maps aliases, abbreviations, and misspeaks onto those canonical objects. One invariant matters most: a franchise's confidential menu can never surface in another tenant's context, and that is enforced by a property-based test, not by convention.
 
@@ -34,11 +37,12 @@ State-changing actions are explicit and guarded. Cart mutations and a mandatory 
 The part worth showing is the layer that measures the app. An oracle scores about 7,620 simulated orders per run across roughly 150 scenarios, graded per slot (intent, quantity, size, temperature, options) into a root-cause failure taxonomy. Variance is measured across random seeds, so single-seed numbers are never quoted, and a held-out scenario split guards against overfitting the fixes to the test set. A machine-checked release gate blocks regressions, with a pass-rate floor and zero tolerance for silent staff-escalation. Twice, this data overturned my own assumptions about what was broken, which is the reason to build it.
 
 ## Honest limitations
+
 Pre-deployment and solo-built. Every number here comes from synthetic stress tests. Real users shaped the design through informal testing, but the system has not run a real-store pilot or a controlled test of the final build with blind users yet, and the persona and scenario frequencies are hypotheses to be re-weighted against real usage.
 
 ## Code access and license
 
-Proprietary, All Rights Reserved (see `LICENSE`). No usage rights are granted. Representative non-core code (the automation pipeline and property-based tests) is in [`code-samples/`](code-samples/). The domain lexicons, state-machine transitions, and model weights are withheld. Commercial licensing for franchise, enterprise, or public-sector use is by separate agreement.
+Proprietary, All Rights Reserved (see `LICENSE`). No usage rights are granted. Representative non-core code (the automation pipeline and property-based tests) is in [`code-samples/`](code-samples/). The domain lexicons, state-machine transitions, and model weights are withheld. Commercial or organizational use requires separate written permission.
 
 ## Data acknowledgement
 
@@ -46,4 +50,4 @@ The simulator uses derived statistical distributions only (filler rate, truncati
 
 ## Contact
 
-Commercial licensing and interview scheduling: shawnkim1022@gmail.com
+Code walkthroughs, demo requests, and interview scheduling: shawnkim1022@gmail.com
