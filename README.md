@@ -11,12 +11,11 @@ The most important part of the project was not the voice interface. User testing
 - User discovery changed the product direction: voice became one option inside an existing app flow, not the whole product.
 - The runtime path is constrained: no generated menu items, no silent assumptions, and no order completion without confirmation.
 - Evaluation drove the build: 7,620 simulated orders per run across ~150 scenarios surfaced multi-turn state-management failures.
-- The deployment path matters: the product was reframed as an embeddable SDK for café-chain apps rather than a standalone accessibility app.
-
+- The deployment path changed: the product was reframed as an embeddable SDK for café-chain apps rather than a standalone accessibility app.
 
 ## The problem
 
-A touchscreen kiosk is unusable without sight. The design problem is not "add a microphone." It is mapping free-form, disfluent Korean speech onto a correct, auditable order, deterministically, in a setting where a wrong order and a hallucinated confirmation are both unacceptable. The whole system is built around one question: how do we know the output is correct?
+A touchscreen kiosk is unusable without sight. The design problem is not “add a microphone.” It is mapping free-form, disfluent Korean speech onto a structured, confirmed order in a setting where a wrong order and a hallucinated confirmation are both unacceptable. The whole system is built around one question: how do we know the output is correct?
 
 ## Designed with the users
 
